@@ -47,7 +47,7 @@ function calculateCol(colSpecifier) {
 
 let numPasses = samples.length
 
-let seatIds = samples.map((sample) => {
+let mySeatId = samples.map((sample) => {
    let re  = /^([F|B]{7})([L|R]{3})/
    let match = sample.match(re)
    return [calculateRow(match[1]), calculateCol(match[2])]
