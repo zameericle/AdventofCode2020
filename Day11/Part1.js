@@ -28,6 +28,8 @@ function makeSeatIterator(seats, rw) {
          nextSeat = data[nextIdx]
          nextRow = parseInt(nextIdx / rowWidth)
          nextCol = nextIdx % rowWidth
+
+         prettyPrint(result.adjMat,3)
          return result
       },
 
@@ -81,11 +83,7 @@ function prettyPrint(seats, width) {
    let str=""
 
    seats.forEach((entry, idx) => {
-      if (entry.length == 1) {
-         str += " "
-      }
-
-      str += entry + " "
+      str += entry
       if ((idx % width) === (width - 1)) {
          str += "\n"
       }
@@ -147,21 +145,18 @@ function performRound(seats, rowWidth) {
 }
 
 
-let seats = "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL"
-   .split("")
-// let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").replace("\n","").split("")
-let rowWidth = 10
-
-prettyPrint(seats,rowWidth)
+// let seats = "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL"
+//    .split("")
+let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
+let rowWidth = 93 
 
 let nextState = performRound(seats, rowWidth)
+
 let run = 0
 
 while(nextState[0]) {
    console.log("Round " + ++run)
-   
-   nextState = performRound(nextState[1], rowWidth)
-   prettyPrint(nextState[1],rowWidth)
+   nextState = performRound(nextState[1], rowWidth) 
 }
 
 let occupiedSeats = nextState[1].reduce((acc, val) => {
