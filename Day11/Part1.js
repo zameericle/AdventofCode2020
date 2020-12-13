@@ -29,7 +29,6 @@ function makeSeatIterator(seats, rw) {
          nextRow = parseInt(nextIdx / rowWidth)
          nextCol = nextIdx % rowWidth
 
-         prettyPrint(result.adjMat,3)
          return result
       },
 
@@ -38,7 +37,11 @@ function makeSeatIterator(seats, rw) {
         [ 9 10 11] */
          adjacencyMatrix: function(row, col) {
             let currIdx = row * rowWidth + col
-            let offsets = [-11, -10, -9, -1, 0, 1, 9, 10, 11]             
+            let offsets = [
+               -rowWidth-1, -rowWidth, -rowWidth+1, 
+               -1, 0, 1, 
+               rowWidth-1, rowWidth, rowWidth+1]
+
             let adjMatrix = 
                ['x','x','x',
                 'x','x','x',
