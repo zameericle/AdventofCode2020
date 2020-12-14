@@ -15,19 +15,44 @@ function makeSeatIterator(seats, rw, adjStratFn) {
 
    const seatIterator = {
       next: function() {
+         let row = nextRow
+         let col = nextCol
+         let validSeat = nextSeat
+
          let result = {
             done: (nextSeat === undefined) ? true : false,
             seat: nextSeat,
-            row:  nextRow,
-            col:  nextCol,
+            row:  row,
+            col:  col,
             idx: nextIdx,
-            adjMat: (nextSeat === undefined) ? [] : adjMatStrat(nextRow, nextCol)
+            adjMat: () => {
+               return (validSeat === undefined) ? [] : adjMatStrat(row, col)
+            }
          }
 
          nextIdx++
          nextSeat = data[nextIdx]
          nextRow = parseInt(nextIdx / rowWidth)
          nextCol = nextIdx % rowWidth
+
+         return result
+      },
+      
+      peakAt: function(idx) {
+         let row = parseInt(idx / rowWidth)
+         let col = idx % rowWidth
+         let validSeat = data[idx]
+
+         let result = {
+            done: (nextSeat === undefined) ? true : false,
+            seat: data[idx],
+            row:  row,
+            col:  col,
+            idx: idx,
+            adjMat: () => {
+               return (validSeat === undefined) ? [] : adjMatStrat(row, col)
+            }
+         }         
 
          return result
       }
@@ -53,8 +78,12 @@ function performRound(seats, rowWidth) {
    let numRows = parseInt(seats.length / rowWidth)
 
    /* rowWidth-1, -rowWidth, -rowWidth+1, 
-                  -1, 0, 1, 
-      rowWidth-1, rowWidth, rowWidth+1 */ 
+    *               -1, 0, 1, 
+    *   rowWidth-1, rowWidth, rowWidth+1 
+    *
+    *   Unlike Part1, in part2 we need to walk up each of the 8 directions
+    *   Until we either hit an "#" or an "L" or fall out of bounds.
+    */
    let adjacencyMatrixFn = function (row, col) {   
       let currIdx = row * rowWidth + col
       let offsets = [
@@ -67,33 +96,77 @@ function performRound(seats, rowWidth) {
       'x','x','x',
       'x','x','x']
 
-      offsets.forEach((offset, idx) => {
-         adjMatRowIdx = parseInt(idx / 3)
-         adjMatColIdx = idx % 3
-         let entry = seats[currIdx + offset] 
+      let numRows = parseInt(seats.length / rowWidth)
 
-         /* first row set the top row of the adjMatrix to 'x'*/
-         if (row === 0 && adjMatRowIdx === 0) {
-            entry = 'x'
-         }
+      function walkPath(from, offset) {
+         let seatIter = makeSeatIterator(seats, rowWidth) 
+         let lookAt = from + offset    
 
-         /* bottom row set the bottom row of the adjMatrix to 'x'*/
-         if (row === (numRows-1) && adjMatRowIdx === 2) {
-            entry = 'x'
-         }
+         let nextSeat
 
-         /* first col set the left column of the adjMatrix to 'x'*/
-         if (col === 0 && adjMatColIdx === 0) {
-            entry = 'x'
-         }
+         do {
+            nextSeat = seatIter.peakAt(lookAt).seat         
 
-         /* first col set the right column of the adjMatrix to -1*/
-         if (col === (rowWidth-1) && adjMatColIdx === 2) {
-            entry = 'x'
-         }
+            switch (nextSeat) {
+               case "#": 
+               case "L": {
+                  return nextSeat
+               }
 
-         adjMatrix[idx] = entry  
-      })            
+               case undefined: {
+                  return 'x'
+               }
+
+               case '.': {
+                  break
+               }
+
+               default: {
+                  console.error("ERROR")
+               }
+            }
+
+            lookAt += offset
+         } while (true)
+      }
+
+      adjMatrix[0] = walkPath(currIdx, offsets[0])
+      adjMatrix[1] = walkPath(currIdx, offsets[1])
+      adjMatrix[2] = walkPath(currIdx, offsets[2])
+      adjMatrix[3] = walkPath(currIdx, offsets[3])
+      adjMatrix[4] = seats[currIdx]
+      adjMatrix[5] = walkPath(currIdx, offsets[5])
+      adjMatrix[6] = walkPath(currIdx, offsets[6])
+      adjMatrix[7] = walkPath(currIdx, offsets[7])
+      adjMatrix[8] = walkPath(currIdx, offsets[8])
+
+      /* first row set the top row of the adjMatrix to 'x'*/
+      if (row <= 0) {
+         adjMatrix[0] = 'x'
+         adjMatrix[1] = 'x'
+         adjMatrix[2] = 'x'
+      }
+
+      /* bottom row set the bottom row of the adjMatrix to 'x'*/
+      if (row >= (numRows-1)) {
+         adjMatrix[6] = 'x'
+         adjMatrix[7] = 'x'
+         adjMatrix[8] = 'x'
+      }
+
+      /* first col set the left column of the adjMatrix to 'x'*/
+      if (col <= 0) {
+         adjMatrix[0] = 'x'
+         adjMatrix[3] = 'x'
+         adjMatrix[6] = 'x'
+      }
+
+      /* first col set the right column of the adjMatrix to -1*/
+      if (col >= (rowWidth-1)) {
+         adjMatrix[2] = 'x'
+         adjMatrix[5] = 'x'
+         adjMatrix[8] = 'x'
+      }     
 
       return adjMatrix
    }
@@ -103,14 +176,16 @@ function performRound(seats, rowWidth) {
    let nextState = []
    let updateSeat = false
    let isUpdated = false
+   let adjMatrix 
 
    while (!seatInfo.done) {
       updateSeat = false
 
+      adjMatrix = seatInfo.adjMat()
+
       switch(seatInfo.seat) {
-         case "L":
-            
-            let updateSeat = seatInfo.adjMat.filter((val) => {
+         case "L":            
+            updateSeat = adjMatrix.filter((val) => {
                return val === "#"
             }).length === 0
 
@@ -121,7 +196,8 @@ function performRound(seats, rowWidth) {
             break
 
          case "#":
-            let count = seatInfo.adjMat.reduce((cnt, val,idx) => {
+
+            let count = adjMatrix.reduce((cnt, val,idx) => {
                if ((val === "#") && (idx != 4)) {
                   cnt++
                }
@@ -129,8 +205,8 @@ function performRound(seats, rowWidth) {
                return cnt
             },0)
 
-            nextState[seatInfo.idx] = (count >= 4) ? "L" : "#"
-            if (count >= 4) {
+            nextState[seatInfo.idx] = count >= 5 ? "L" : "#"
+            if (count >= 5) {               
                isUpdated = true   
             }
             break
@@ -138,10 +214,11 @@ function performRound(seats, rowWidth) {
          case ".":
             nextState[seatInfo.idx] = "."
             break
+            
          case "x":
             break
       }
-      
+
       seatInfo = iter.next()
    }      
 
@@ -149,10 +226,15 @@ function performRound(seats, rowWidth) {
 }
 
 
-let seats = "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL"
-   .split("")
-// let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
-let rowWidth = 10
+// let seats = ".......#....#......#..................#L....#....#.............#...........#.....".split("")
+// let seats = "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL".split("")
+// let seats = "..............L.L.#.#.#.#..............".split("")
+// let rowWidth = 13
+
+let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
+let rowWidth = 93
+
+prettyPrint(seats,rowWidth)
 
 let nextState = performRound(seats, rowWidth)
 
@@ -160,7 +242,9 @@ let run = 0
 
 while(nextState[0]) {
    console.log("Round " + ++run)
-   nextState = performRound(nextState[1], rowWidth) 
+   prettyPrint(nextState[1],rowWidth)
+
+   nextState = performRound(nextState[1], rowWidth)   
 }
 
 let occupiedSeats = nextState[1].reduce((acc, val) => {
@@ -170,6 +254,6 @@ let occupiedSeats = nextState[1].reduce((acc, val) => {
    return acc
 
 }, 0)
+console.log(occupiedSeats) 
 
 prettyPrint(nextState[1],rowWidth)
-console.log(occupiedSeats)
