@@ -98,23 +98,23 @@ function performRound(seats, rowWidth) {
 
       let numRows = parseInt(seats.length / rowWidth)
 
-      function walkPath(from, offset) {
+      function walkPath(from, offset, constrainToRow) {
          let seatIter = makeSeatIterator(seats, rowWidth) 
          let lookAt = from + offset    
-
-         let nextSeat
+         let nextSeat, nextRow
 
          do {
             nextSeat = seatIter.peakAt(lookAt).seat         
+            nextRow = parseInt(lookAt / rowWidth)
 
             switch (nextSeat) {
                case "#": 
                case "L": {
-                  return nextSeat
+                  return (constrainToRow && nextRow !== row) ? "x" : nextSeat
                }
 
                case undefined: {
-                  return 'x'
+                  return "x"
                }
 
                case '.': {
@@ -133,9 +133,9 @@ function performRound(seats, rowWidth) {
       adjMatrix[0] = walkPath(currIdx, offsets[0])
       adjMatrix[1] = walkPath(currIdx, offsets[1])
       adjMatrix[2] = walkPath(currIdx, offsets[2])
-      adjMatrix[3] = walkPath(currIdx, offsets[3])
+      adjMatrix[3] = walkPath(currIdx, offsets[3], true)
       adjMatrix[4] = "E"
-      adjMatrix[5] = walkPath(currIdx, offsets[5])
+      adjMatrix[5] = walkPath(currIdx, offsets[5], true)
       adjMatrix[6] = walkPath(currIdx, offsets[6])
       adjMatrix[7] = walkPath(currIdx, offsets[7])
       adjMatrix[8] = walkPath(currIdx, offsets[8])
@@ -202,7 +202,7 @@ function performRound(seats, rowWidth) {
             }).length >= 5
 
             nextState[seatInfo.idx] = updateSeat? "L" : "#"
-            if (updateSeat) {               
+            if (updateSeat) {            
                isUpdated = true   
             }
             break
@@ -224,11 +224,11 @@ function performRound(seats, rowWidth) {
 
 // let seats = ".......#....#......#..................#L....#....#.............#...........#.....".split("")
 // let seats = "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL".split("")
-// let seats = "..............L.L.#.#.#.#..............".split("")
-// let rowWidth = 13
+let seats = "###############".split("")
+let rowWidth = 5
 
-let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
-let rowWidth = 93
+// let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
+// let rowWidth = 93
 
 prettyPrint(seats,rowWidth)
 
@@ -238,7 +238,7 @@ let run = 0
 
 while(nextState[0]) {
    console.log("Round " + ++run)
-   // prettyPrint(nextState[1],rowWidth)
+   prettyPrint(nextState[1],rowWidth)
 
    nextState = performRound(nextState[1], rowWidth)   
 }
