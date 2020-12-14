@@ -134,7 +134,7 @@ function performRound(seats, rowWidth) {
       adjMatrix[1] = walkPath(currIdx, offsets[1])
       adjMatrix[2] = walkPath(currIdx, offsets[2])
       adjMatrix[3] = walkPath(currIdx, offsets[3])
-      adjMatrix[4] = seats[currIdx]
+      adjMatrix[4] = "E"
       adjMatrix[5] = walkPath(currIdx, offsets[5])
       adjMatrix[6] = walkPath(currIdx, offsets[6])
       adjMatrix[7] = walkPath(currIdx, offsets[7])
@@ -197,22 +197,18 @@ function performRound(seats, rowWidth) {
 
          case "#":
 
-            let count = adjMatrix.reduce((cnt, val,idx) => {
-               if ((val === "#") && (idx != 4)) {
-                  cnt++
-               }
+            updateSeat = adjMatrix.filter((val) => {
+               return val === "#"
+            }).length >= 5
 
-               return cnt
-            },0)
-
-            nextState[seatInfo.idx] = count >= 5 ? "L" : "#"
-            if (count >= 5) {               
+            nextState[seatInfo.idx] = updateSeat? "L" : "#"
+            if (updateSeat) {               
                isUpdated = true   
             }
             break
 
          case ".":
-            nextState[seatInfo.idx] = "."
+            nextState[seatInfo.idx] = seatInfo.seat
             break
             
          case "x":
@@ -242,10 +238,12 @@ let run = 0
 
 while(nextState[0]) {
    console.log("Round " + ++run)
-   prettyPrint(nextState[1],rowWidth)
+   // prettyPrint(nextState[1],rowWidth)
 
    nextState = performRound(nextState[1], rowWidth)   
 }
+
+prettyPrint(nextState[1],rowWidth)
 
 let occupiedSeats = nextState[1].reduce((acc, val) => {
    if (val === "#") {
@@ -256,4 +254,3 @@ let occupiedSeats = nextState[1].reduce((acc, val) => {
 }, 0)
 console.log(occupiedSeats) 
 
-prettyPrint(nextState[1],rowWidth)
