@@ -256,7 +256,7 @@ function performRound(seats, rowWidth) {
 }
 
 
-let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
+let seats = fs.readFileSync(process.env.INPUT_PATH, "utf8").split("")
 let rowWidth = 93
 
 prettyPrint(seats,rowWidth)
