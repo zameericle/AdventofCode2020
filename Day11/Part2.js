@@ -86,31 +86,33 @@ function performRound(seats, rowWidth) {
     */
    let adjacencyMatrixFn = function (row, col) {   
       let currIdx = row * rowWidth + col
-      let offsets = [
-      -rowWidth-1, -rowWidth, -rowWidth+1, 
-      -1, 0, 1, 
-      rowWidth-1, rowWidth, rowWidth+1]
 
       let adjMatrix = 
-      ['x','x','x',
-      'x','x','x',
-      'x','x','x']
+      ['A','B','C',
+       'D','E','F',
+       'G','H','I']
 
       let numRows = parseInt(seats.length / rowWidth)
 
-      function walkPath(from, offset, constrainToRow) {
+      function walkPath(from, nextPosFn) {
          let seatIter = makeSeatIterator(seats, rowWidth) 
-         let lookAt = from + offset    
-         let nextSeat, nextRow
+         let {nextRow, nextCol} = nextPosFn(from)
+
+         let nextSeat, lookAt, nextPos
 
          do {
+            if ((nextRow < 0) || (nextRow >= numRows) ||
+                (nextCol < 0) || (nextCol >= rowWidth)) {
+               return "x" 
+            }
+
+            lookAt = nextRow * rowWidth + nextCol
             nextSeat = seatIter.peakAt(lookAt).seat         
-            nextRow = parseInt(lookAt / rowWidth)
 
             switch (nextSeat) {
                case "#": 
                case "L": {
-                  return (constrainToRow && nextRow !== row) ? "x" : nextSeat
+                  return nextSeat
                }
 
                case undefined: {
@@ -126,47 +128,74 @@ function performRound(seats, rowWidth) {
                }
             }
 
-            lookAt += offset
+            nextPos = nextPosFn({row: nextRow, col: nextCol})
+            nextRow = nextPos.nextRow
+            nextCol = nextPos.nextCol
          } while (true)
       }
 
-      adjMatrix[0] = walkPath(currIdx, offsets[0])
-      adjMatrix[1] = walkPath(currIdx, offsets[1])
-      adjMatrix[2] = walkPath(currIdx, offsets[2])
-      adjMatrix[3] = walkPath(currIdx, offsets[3], true)
-      adjMatrix[4] = "E"
-      adjMatrix[5] = walkPath(currIdx, offsets[5], true)
-      adjMatrix[6] = walkPath(currIdx, offsets[6])
-      adjMatrix[7] = walkPath(currIdx, offsets[7])
-      adjMatrix[8] = walkPath(currIdx, offsets[8])
-
-      /* first row set the top row of the adjMatrix to 'x'*/
-      if (row <= 0) {
-         adjMatrix[0] = 'x'
-         adjMatrix[1] = 'x'
-         adjMatrix[2] = 'x'
+      let startPos = {
+         row: row,
+         col: col
       }
 
-      /* bottom row set the bottom row of the adjMatrix to 'x'*/
-      if (row >= (numRows-1)) {
-         adjMatrix[6] = 'x'
-         adjMatrix[7] = 'x'
-         adjMatrix[8] = 'x'
-      }
+      adjMatrix[0] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row - 1, 
+            nextCol: from.col - 1
+         }
+      })
 
-      /* first col set the left column of the adjMatrix to 'x'*/
-      if (col <= 0) {
-         adjMatrix[0] = 'x'
-         adjMatrix[3] = 'x'
-         adjMatrix[6] = 'x'
-      }
+      adjMatrix[1] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row - 1,
+            nextCol: from.col
+         }
+      })
 
-      /* first col set the right column of the adjMatrix to -1*/
-      if (col >= (rowWidth-1)) {
-         adjMatrix[2] = 'x'
-         adjMatrix[5] = 'x'
-         adjMatrix[8] = 'x'
-      }     
+      adjMatrix[2] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row - 1,
+            nextCol: from.col + 1
+         }
+      })      
+
+      adjMatrix[3] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row,
+            nextCol: from.col - 1
+         }
+      })      
+
+      adjMatrix[4] = "[" + seats[currIdx] + "]"
+
+      adjMatrix[5] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row,
+            nextCol: from.col + 1
+         }
+      }) 
+
+      adjMatrix[6] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row + 1,
+            nextCol: from.col - 1
+         }
+      })       
+
+      adjMatrix[7] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row + 1,
+            nextCol: from.col
+         }
+      })  
+
+      adjMatrix[8] = walkPath(startPos, (from) => {
+         return {
+            nextRow: from.row + 1,
+            nextCol: from.col + 1
+         }
+      })  
 
       return adjMatrix
    }
@@ -177,12 +206,17 @@ function performRound(seats, rowWidth) {
    let updateSeat = false
    let isUpdated = false
    let adjMatrix 
+   let cache = []
 
    while (!seatInfo.done) {
       updateSeat = false
 
-      adjMatrix = seatInfo.adjMat()
-
+      adjMatrix = cache[seatInfo.idx] 
+      if (adjMatrix === undefined) {
+         adjMatrix = seatInfo.adjMat()
+         cache[seatInfo.idx] = adjMatrix
+      }
+      
       switch(seatInfo.seat) {
          case "L":            
             updateSeat = adjMatrix.filter((val) => {
@@ -222,13 +256,8 @@ function performRound(seats, rowWidth) {
 }
 
 
-// let seats = ".......#....#......#..................#L....#....#.............#...........#.....".split("")
-// let seats = "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL".split("")
-let seats = "###############".split("")
-let rowWidth = 5
-
-// let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
-// let rowWidth = 93
+let seats = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day11/input.txt", "utf8").split("")
+let rowWidth = 93
 
 prettyPrint(seats,rowWidth)
 
@@ -238,7 +267,6 @@ let run = 0
 
 while(nextState[0]) {
    console.log("Round " + ++run)
-   prettyPrint(nextState[1],rowWidth)
 
    nextState = performRound(nextState[1], rowWidth)   
 }
@@ -253,4 +281,3 @@ let occupiedSeats = nextState[1].reduce((acc, val) => {
 
 }, 0)
 console.log(occupiedSeats) 
-
