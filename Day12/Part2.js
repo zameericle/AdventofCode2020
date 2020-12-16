@@ -4,7 +4,7 @@ math = require("mathjs")
 
 fs = require("fs")
 
-let rawDirections = fs.readFileSync("/Users/zameericle/Development/AdventofCode2020/Day12/input.txt", "utf8").split("\n")
+let rawDirections = fs.readFileSync(process.env.INPUT_PATH, "utf8").split("\n")
 
 let noop = (action, state) => {         
    let newState = {...state}
