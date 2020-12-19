@@ -1,3 +1,8 @@
+/** this is a horrible brute force attempt, unoptimized as well
+ * if I had more time I would have:
+ *   - kept my array sizes fixed (2 elements are needed per entry) [previous to last turn, last turn]...
+ */
+
 const { Console } = require("console")
 const { start } = require("repl")
 
@@ -6,14 +11,13 @@ let input = "0,13,1,16,6,17"
 let turns = input.split(/,/)
    .map((val) => parseInt(val))
    .reduce((map, val, idx) => {
-      let result = {}
       map[val] = [idx+1]
       map.lastSpoken = val
       return map
    }, {})
 
 
-for (turn = Object.keys(turns).length; turn <= 2020; turn++) {
+for (turn = Object.keys(turns).length; turn <= 30000000; turn++) {   
    /* first time */
    if (turns[turns.lastSpoken].length === 1) {      
       if (turns[0] === undefined) {
@@ -37,4 +41,3 @@ for (turn = Object.keys(turns).length; turn <= 2020; turn++) {
 }
 
 console.log(turns.lastSpoken)   
-
